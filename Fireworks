@@ -1,0 +1,234 @@
+//Sam Nosenzo
+//8/20/15
+//Fireworks?
+
+ArrayList<Rocket> rkts;
+ArrayList<Particle> ps;
+PVector gravity;
+void setup() {
+  size(700, 700);
+  background(0);
+  stroke(255);
+  fill(255);
+
+  gravity = new PVector(0, .15);
+
+  rkts = new ArrayList<Rocket>();
+  ps = new ArrayList<Particle>();
+}
+
+void draw() {
+  //background(0);
+  noStroke();
+  fill(0, 40);
+  rect(0, 0, width, height);
+  for (int i = rkts.size ()-1; i >=0; i--) {
+    Rocket r = rkts.get(i);
+    r.applyForce(gravity);
+    r.thrust();
+    r.update();
+    if (r.fuse >= 0) {
+      r.display();
+    } else if ( r.fuse <= -5) {
+      float col = random(255);
+      for (int j = 0; j < 50; j++) {
+        
+        ps.add(new Particle(new PVector(r.loc.x, r.loc.y), random(.2, .6), col));
+      }
+      rkts.remove(i);
+    }
+  }
+  for (int i = ps.size ()-1; i >=0; i--) {
+    Particle p = ps.get(i);
+    p.applyForce(gravity);
+    p.update();
+    p.display();
+    if (p.isDead()) {
+      ps.remove(i);
+    }
+  }
+
+
+  if (mousePressed) {
+    Rocket r = new Rocket(mouseX, -PI/2, .6, 40);
+    rkts.add(r);
+  }
+}
+
+
+/*
+void mousePressed(){
+ Rocket r = new Rocket(mouseX, -PI/2, .6, 40);
+ rkts.add(r);
+ }
+ */
+ 
+ 
+ 
+ 
+ 
+ 
+ //Start of Rocket Class
+ 
+ class Rocket{
+  
+  PVector loc, vel, acc;
+  int fuel, initfuel;
+  float initacc;
+  float angle;
+  int fuse = int(random(75, 100));
+  Rocket( float x, float theta, float ia, int fl){
+    loc = new PVector(x, height-random(50));
+    vel = new PVector();
+    acc = new PVector();
+    angle = theta;
+    initacc = ia;
+    initfuel = fl;
+    fuel = fl;
+  }
+  
+  void update(){
+    vel.add(acc);
+    loc.add(vel);
+    acc.mult(0);
+    fuse--;
+
+  }
+  
+  void applyForce(PVector force){
+    acc.add(force);
+  }
+  
+  void thrust(){
+    float mag = 0;
+    float theta = PI/2;
+    if( fuel < .1*initfuel){
+      mag = map(fuel, 0, initfuel, 0, initacc);
+      theta = vel.heading()+ random(-PI/15, PI/15);
+    } 
+    else if(fuel == initfuel){
+      mag = initacc*1.5;
+      theta = angle;
+      fuel-=5;
+    }
+    else if(fuel <=0){
+      mag = 0;
+      theta = vel.heading();
+    }
+    else {
+      mag = initacc;
+      theta = vel.heading()+random(-PI/15, PI/15);
+    }
+  
+    PVector thrust = PVector.fromAngle(theta);
+    thrust.setMag(mag);
+    if(fuel > 0){
+      applyForce(thrust);
+    }
+    fuel-=1;
+  }
+  
+  void display(){
+    fuse--;
+    if(fuel >0) fill(255, 0, 0);
+    else fill(255);
+    if(fuse < 0) fill(0, 255, 0);
+    if(vel.y > 0) stroke(0, 0, 255);
+    else stroke(255);
+    
+    pushMatrix();
+    translate(loc.x, loc.y);
+    rotate(vel.heading());
+    beginShape();
+      vertex(8,  0);
+      vertex(0,  3);
+      vertex(0, -3);
+    endShape(CLOSE);
+   popMatrix();
+  }
+} 
+
+
+
+
+//Start of Particle Class
+
+class Particle{
+  PVector location, velocity, acceleration;
+  float lifespan;
+  float a1, a2, a3, x1, y1, x2, y2, x3, y3;
+  float mass;
+  float angVel;
+  float angle =0 ;
+  float col;
+  
+  Particle(PVector l, float m, float col){
+    location = l.get();
+    acceleration = new PVector();
+    velocity = PVector.fromAngle(random(TWO_PI));
+    velocity.mult(random(3, 4));
+    lifespan = 255;
+    mass = m;
+    //mass = constrain(mass, 1, 6);
+    angVel = random(.1, .5);
+    
+    this.col = col;
+    
+    a1 = random(PI);
+    a2 = random(PI, TWO_PI);
+    a3 = random(TWO_PI);
+    x1 = 10*mass*cos(a1);
+    y1 = 10*mass *sin(a1);
+    x2 = 10 * mass * cos(a2);
+    y2 = 10 * mass * sin(a2);
+    x3 = 10 * mass * cos(a3);
+    y3 = 10 * mass * sin(a3); 
+
+  }
+  void update(){
+    velocity.add(acceleration);
+    location.add(velocity);
+    lifespan -=5;
+    acceleration.mult(0);
+    angle+=angVel;
+  }
+  
+  void display(){
+    colorMode(HSB);
+    stroke(col, 255, 255, lifespan);
+    fill(col, 255, 255, lifespan);
+    colorMode(RGB);
+    pushMatrix();
+      translate(location.x, location.y);
+      rotate(angle);
+      triangle(x1, y1, x2, y2, x3, y3);
+    popMatrix();
+  }
+    
+  
+  void run(){
+    update();
+    display();
+  }
+  
+  boolean isDead(){
+    if(lifespan < 0.0){
+      return true;
+    } else{
+      return false;
+    }
+  }
+  
+  void applyForce(PVector f){
+    //f.div(mass);
+    acceleration.add(f);
+  }
+  
+}
+    
+    
+  
+ 
+ 
+ 
+ 
